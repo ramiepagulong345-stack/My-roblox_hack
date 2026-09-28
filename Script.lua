@@ -1,66 +1,139 @@
--- Load the Rayfield UI Library safely
+-- Load Rayfield UI Library safely
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Create the Main Hub Window
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Variables for toggles & features
+local SpeedValue = 16
+local SpeedEnabled = false
+local Flying = false
+local FlySpeed = 50
+
+-- Create Main Hub Window
 local Window = Rayfield:CreateWindow({
-   Name = "Brainrot Steal Hub",
-   LoadingTitle = "Loading Mechanics...",
-   LoadingSubtitle = "by Studio Developer",
-   ConfigurationSaving = {
-      Enabled = false
-   }
+   Name = "VOID HUB | Steal a Brainrot",
+   LoadingTitle = "Loading Void Hub Systems...",
+   LoadingSubtitle = "Mobile & PC Compatible",
+   ConfigurationSaving = { Enabled = false }
 })
 
--- Main Tab
-local MainTab = Window:CreateTab("Player Mods", 4483362458) -- Title, ImageId
+-- ==========================================
+-- TAB 1: PLAYER MODS (FORCED SPEED & FLY)
+-- ==========================================
+local PlayerTab = Window:CreateTab("Movement Mods", 4483362458)
 
--- Walkspeed Slider
-local SpeedSlider = MainTab:CreateSlider({
-   Name = "WalkSpeed",
-   Range = {16, 100},
-   Increment = 1,
+-- Speed Toggle
+PlayerTab:CreateToggle({
+   Name = "Enable Fast Speed",
+   CurrentValue = false,
+   Flag = "SpeedToggle",
+   Callback = function(Value)
+      SpeedEnabled = Value
+   end,
+})
+
+-- Speed Slider
+PlayerTab:CreateSlider({
+   Name = "Walk Speed",
+   Range = {16, 250},
+   Increment = 5,
    Suffix = "Speed",
-   CurrentValue = 16,
+   CurrentValue = 50,
    Flag = "SpeedSlider",
    Callback = function(Value)
-      game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+      SpeedValue = Value
    end,
 })
 
--- Jump Power Slider
-local JumpSlider = MainTab:CreateSlider({
-   Name = "JumpPower",
-   Range = {50, 200},
-   Increment = 5,
-   Suffix = "Power",
-   CurrentValue = 50,
-   Flag = "JumpSlider",
+-- Force Speed Loop (Prevents game from resetting your speed)
+RunService.RenderStepped:Connect(function()
+   if SpeedEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      LocalPlayer.Character.Humanoid.WalkSpeed = SpeedValue
+   end
+end)
+
+-- Fly Mode Toggle
+PlayerTab:CreateToggle({
+   Name = "Fly Mode (Steal in Air)",
+   CurrentValue = false,
+   Flag = "FlyToggle",
    Callback = function(Value)
-      game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+      Flying = Value
+      local Character = LocalPlayer.Character
+      if not Character then return end
+      local Root = Character:FindFirstChild("HumanoidRootPart")
+      
+      if Flying and Root then
+         local BodyVelocity = Instance.new("BodyVelocity")
+         BodyVelocity.Name = "VoidFlyVelocity"
+         BodyVelocity.MaxForce = Vector3.new(4e5, 4e5, 4e5)
+         BodyVelocity.Velocity = Vector3.zero
+         BodyVelocity.Parent = Root
+         
+         -- Flying control loop
+         task.spawn(function()
+            while Flying and Character:FindFirstChild("Humanoid") do
+               local Camera = workspace.CurrentCamera
+               BodyVelocity.Velocity = Camera.CFrame.LookVector * FlySpeed
+               task.wait()
+            end
+            BodyVelocity:Destroy()
+         end)
+      elseif Root:FindFirstChild("VoidFlyVelocity") then
+         Root.VoidFlyVelocity:Destroy()
+      end
    end,
 })
 
--- Steal Toggle Action Button
-local ActionButton = MainTab:CreateButton({
-   Name = "Auto-Collect Nearby Brainrot Items",
+-- ==========================================
+-- TAB 2: STEAL & EGG AUTOMATION
+-- ==========================================
+local StealTab = Window:CreateTab("Steal & Eggs", 4483362458)
+
+-- Steal Rare Eggs
+StealTab:CreateButton({
+   Name = "Steal Rare Eggs",
    Callback = function()
-      -- Example logic: Find nearby items and bring them to player
-      local player = game.Players.LocalPlayer
-      local char = player.Character or player.CharacterAdded:Wait()
+      local Character = LocalPlayer.Character
+      if not Character or not Character:FindFirstChild("HumanoidRootPart") then return end
       
-      for _, item in pairs(workspace:GetChildren()) do
-         if item:IsA("Tool") or item.Name == "BrainrotItem" then
-            if item:FindFirstChild("Handle") then
-               item.Handle.CFrame = char.HumanoidRootPart.CFrame
+      local found = false
+      for _, obj in pairs(workspace:GetDescendants()) do
+         if obj.Name:lower():find("rare") or obj.Name:lower():find("egg") or obj.Name:lower():find("brainrot") then
+            if obj:IsA("BasePart") then
+               Character.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
+               found = true
+               break
+            elseif obj:IsA("Model") and obj.PrimaryPart then
+               Character.HumanoidRootPart.CFrame = obj.PrimaryPart.CFrame + Vector3.new(0, 3, 0)
+               found = true
+               break
             end
          end
+      end
+      
+      if not found then
+         Rayfield:Notify({Title = "Void Hub", Content = "No Rare Eggs or Items found nearby!", Duration = 3})
+      end
+   end,
+})
+
+-- Bottom Steal (Teleport to Bottom / Underground Baseplate)
+StealTab:CreateButton({
+   Name = "Bottom Steal (Teleport Safe)",
+   Callback = function()
+      local Character = LocalPlayer.Character
+      if Character and Character:FindFirstChild("HumanoidRootPart") then
+         -- Teleports 15 studs below current position to steal safely from below
+         Character.HumanoidRootPart.CFrame = Character.HumanoidRootPart.CFrame * CFrame.new(0, -15, 0)
       end
    end,
 })
 
 Rayfield:Notify({
-   Title = "Hub Loaded",
-   Content = "Brainrot Steal controls are ready to use!",
-   Duration = 5,
-   Image = 4483362458,
+   Title = "Void Hub Loaded",
+   Content = "All features are ready!",
+   Duration = 4,
 })
