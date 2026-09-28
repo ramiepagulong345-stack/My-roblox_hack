@@ -1,115 +1,66 @@
--- Fetch Local Player Information
-local LocalPlayer = game:GetService("Players").LocalPlayer
-local Username = LocalPlayer.Name
-local DisplayName = LocalPlayer.DisplayName
-local UserId = LocalPlayer.UserId
-
--- Load Rayfield UI Library
+-- Load the Rayfield UI Library safely
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Create Hub Window
+-- Create the Main Hub Window
 local Window = Rayfield:CreateWindow({
-   Name = "Custom Hub | Steal An Egg",
-   LoadingTitle = "Loading Menu...",
-   LoadingSubtitle = "Welcome, " .. DisplayName,
+   Name = "Brainrot Steal Hub",
+   LoadingTitle = "Loading Mechanics...",
+   LoadingSubtitle = "by Studio Developer",
    ConfigurationSaving = {
       Enabled = false
-   },
-   KeySystem = false
+   }
 })
 
--- Send Welcome Notification
-Rayfield:Notify({
-   Title = "Hub Loaded",
-   Content = "Logged in as " .. Username,
-   Duration = 5,
-   Image = 4483362458
-})
+-- Main Tab
+local MainTab = Window:CreateTab("Player Mods", 4483362458) -- Title, ImageId
 
----------------------------------------------------------
--- TAB 1: PLAYER PROFILE & STATS
----------------------------------------------------------
-local InfoTab = Window:CreateTab("Player Info", 4483362458)
-local InfoSection = InfoTab:CreateSection("Account Info")
-
-InfoSection:CreateParagraph({
-   Title = "User Profile",
-   Content = "Username: " .. Username .. "\nDisplay Name: " .. DisplayName .. "\nUser ID: " .. UserId
-})
-
-InfoSection:CreateButton({
-   Name = "Copy User ID",
-   Callback = function()
-      setclipboard(tostring(UserId))
-      Rayfield:Notify({
-         Title = "Copied!",
-         Content = "User ID copied to clipboard.",
-         Duration = 3,
-         Image = 4483362458
-      })
-   end,
-})
-
----------------------------------------------------------
--- TAB 2: MOVEMENT MODS
----------------------------------------------------------
-local PlayerTab = Window:CreateTab("Movement", 4483362458)
-local MovementSection = PlayerTab:CreateSection("Speed & Jump")
-
-MovementSection:CreateSlider({
+-- Walkspeed Slider
+local SpeedSlider = MainTab:CreateSlider({
    Name = "WalkSpeed",
-   Range = {16, 200},
+   Range = {16, 100},
    Increment = 1,
    Suffix = "Speed",
    CurrentValue = 16,
    Flag = "SpeedSlider",
    Callback = function(Value)
-      if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-         LocalPlayer.Character.Humanoid.WalkSpeed = Value
-      end
+      game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
    end,
 })
 
-MovementSection:CreateSlider({
+-- Jump Power Slider
+local JumpSlider = MainTab:CreateSlider({
    Name = "JumpPower",
-   Range = {50, 250},
+   Range = {50, 200},
    Increment = 5,
    Suffix = "Power",
    CurrentValue = 50,
    Flag = "JumpSlider",
    Callback = function(Value)
-      if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-         LocalPlayer.Character.Humanoid.UseJumpPower = true
-         LocalPlayer.Character.Humanoid.JumpPower = Value
+      game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+   end,
+})
+
+-- Steal Toggle Action Button
+local ActionButton = MainTab:CreateButton({
+   Name = "Auto-Collect Nearby Brainrot Items",
+   Callback = function()
+      -- Example logic: Find nearby items and bring them to player
+      local player = game.Players.LocalPlayer
+      local char = player.Character or player.CharacterAdded:Wait()
+      
+      for _, item in pairs(workspace:GetChildren()) do
+         if item:IsA("Tool") or item.Name == "BrainrotItem" then
+            if item:FindFirstChild("Handle") then
+               item.Handle.CFrame = char.HumanoidRootPart.CFrame
+            end
+         end
       end
    end,
 })
 
----------------------------------------------------------
--- TAB 3: PET DISPLAY DEMO
----------------------------------------------------------
-local PetTab = Window:CreateTab("Pet Preview", 4483362458)
-local PetSection = PetTab:CreateSection("Rarity Reference")
-
-PetSection:CreateParagraph({
-   Title = "Common Egg",
-   Content = "Chance: 60%\nCommon Pets: Cat, Dog"
-})
-
-PetSection:CreateParagraph({
-   Title = "Rare Egg",
-   Content = "Chance: 35%\nRare Pets: Golden Cat, Dragon"
-})
-
----------------------------------------------------------
--- TAB 4: SETTINGS
----------------------------------------------------------
-local SettingsTab = Window:CreateTab("Settings", 4483362458)
-local SettingsSection = SettingsTab:CreateSection("Menu Control")
-
-SettingsSection:CreateButton({
-   Name = "Unload UI",
-   Callback = function()
-      Rayfield:Destroy()
-   end,
+Rayfield:Notify({
+   Title = "Hub Loaded",
+   Content = "Brainrot Steal controls are ready to use!",
+   Duration = 5,
+   Image = 4483362458,
 })
